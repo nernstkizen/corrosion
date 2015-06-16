@@ -321,6 +321,7 @@ for (i in 1:100)
   lm700 <- stepAIC(lm700, direction="both")
   prelm700<-exp(predict(lm700,newdata=weardata[-n1,6:12]))-1
   trulm700<-weardata[-n1,3]
+  
   result700[i]<-sqrt(mean((prelm700-trulm700)^2))
 }
 
