@@ -24,8 +24,6 @@ library(randomForest)
 library(gbm)
 library(cvTools)
 library(caret)
-library(MASS)
-library(rpart2)
 #---------------------------------------------------------------------------------------------------------------------
 ### Project folder path
 #---------------------------------------------------------------------------------------------------------------------
@@ -68,10 +66,10 @@ setwd(wd)
 fitControl <- trainControl(## 5-fold CV
   method = "repeatedcv",
   number = 5,
-  repeats=1)
+  repeats=10)
 
 
-rfGrid <- expand.grid(mtry=c(6,7))
+rfGrid <- expand.grid(mtry=c(1,2,3,4,5,6,7))
 
 rfFit.600<- train(wear600 ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
                   data = weardata,
@@ -79,8 +77,7 @@ rfFit.600<- train(wear600 ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesP
                   tuneGrid=rfGrid,
                   trControl = fitControl,
                   verbose = FALSE,
-                  importance=TRUE,
-                  ntree=200)
+                  importance=TRUE)
 plot(varImp(rfFit.600),lwd=20)
 
 #Wear 630
@@ -89,7 +86,7 @@ plot(varImp(rfFit.600),lwd=20)
 fitControl <- trainControl(## 5-fold CV
   method = "repeatedcv",
   number = 5,
-  repeats=2)
+  repeats=10)
 
 
 rfGrid <- expand.grid(mtry=c(1,2,3,4,5,6,7))
@@ -110,10 +107,10 @@ plot(varImp(rfFit.630))
 fitControl <- trainControl(## 5-fold CV
   method ="repeatedcv",
   number = 5,
-  repeats=2)
+  repeats=10)
  
 
-rfGrid <- expand.grid(mtry=c(6,7))
+rfGrid <- expand.grid(mtry=c(1,2,3,4,5,6,7))
 
 rfFit.700<- train(wear700 ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
                     data = weardata,
@@ -137,9 +134,9 @@ plot(varImp(rfFit.700))
 fitControl <- trainControl(## 5-fold CV
   method = "repeatedcv",
   number = 5,
-  repeats=2)
+  repeats=10)
 
-gbmGrid <- expand.grid(interaction.depth=4,n.trees = 2000, shrinkage=0.01, n.minobsinnode=10)
+gbmGrid <- expand.grid(interaction.depth=5,n.trees = 2000, shrinkage=0.01, n.minobsinnode=10)
 
 gbmFit.600<- train(wear600 ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
                     data = weardata,
@@ -154,7 +151,7 @@ plot(varImp(gbmFit.600))
 fitControl <- trainControl(## 5-fold CV
   method = "repeatedcv",
   number = 5,
-  repeats=2)
+  repeats=10)
 
 gbmGrid <- expand.grid(interaction.depth=4,n.trees = 2000, shrinkage=0.01, n.minobsinnode=10)
 
@@ -178,7 +175,7 @@ plot(varImp(gbmFit.630))
 fitControl <- trainControl(## 5-fold CV
   method = "repeatedcv",
   number = 5,
-  repeats=2)
+  repeats=10)
 
 gbmGrid <- expand.grid(interaction.depth=4,n.trees = 2000, shrinkage=0.01, n.minobsinnode=10)
 
@@ -193,10 +190,6 @@ gbmFit.700<- train(wear700 ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFines
 plot(varImp(gbmFit.700))
 
 
-gbm(wear700 ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P, 
-    data=weardata, n.trees=2000, shrinkage=0.01,distribution='gaussian',interaction.depth=4,
-    class.stratify.cv=TRUE)  
-
 
 
 
@@ -210,101 +203,33 @@ gbm(wear700 ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d5
 
 n<-dim(weardata)[1]
 result600<-rep(0,100)
-for (i in 1:100)
+for (i in 1:600)
 {
 
 n1<-base::sample(1:n,size=ceiling(n*0.8))
-lm600<-lm(log(wear600+1) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
+lm600<-lm(log(wear600+0.01) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
           data = weardata[n1,])
 lm600 <- stepAIC(lm600, direction="both")
-prelm600<-exp(predict(lm600,newdata=weardata[-n1,6:12]))-1
+prelm600<-exp(predict(lm600,newdata=weardata[-n1,6:12]))-0.01
 trulm600<-weardata[-n1,3]
 result600[i]<-sqrt(mean((prelm600-trulm600)^2))
 }
 
 
-
-#Calculate the final expression
-lm600<-lm(log(wear600+1) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
-          data = weardata)
-
-lm600 <- stepAIC(lm600, direction="both")
-
-
-
-
-
-
-#Wear 600  (Stratified Cross validation)
-
-
-n<-dim(weardata)[1]
-result600<-rep(0,100)
-for (i in 1:100)
-{
-  
-  
-  n11<-base::sample(which(weardata$wear600<0.5),size=ceiling(0.8*length(which(weardata$wear600<0.5))))
-  n12<-base::sample(which(weardata$wear600>0.5&weardata$wear600<1.5),size=ceiling(0.8*length(which(weardata$wear600>0.5&weardata$wear600<1.5))))
-  n13<-base::sample(which(weardata$wear600>1.5),size=ceiling(0.8*length(which(weardata$wear600>1.5))))
-  n1<-c(n11,n12,n13)
-  lm600<-lm(log(wear600+1) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
-            data = weardata[n1,])
-  lm600 <- stepAIC(lm600, direction="both")
-  prelm600<-exp(predict(lm600,newdata=weardata[-n1,6:12]))-1
-  trulm600<-weardata[-n1,3]
-  result600[i]<-sqrt(mean((prelm600-trulm600)^2))
-}
-
-
-
-#Wear 630(Adapted)(not good)
-wearnewdata<-weardata
-wearnewdata[,6:10]<-log(weardata[,6:10]+0.1)
-n<-dim(wearnewdata)[1]
-result630<-rep(0,100)
-for (i in 1:100)
-{
-  
-  
-  n1<-base::sample(1:n,size=ceiling(n*0.8))
-  lm630<-lm(log(wear630+0.1) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P,
-            data = wearnewdata[n1,])
-  lm630 <- stepAIC(lm630, direction="both")
-  prelm630<-exp(predict(lm630,newdata=wearnewdata[-n1,6:12]))-0.1
-  trulm630<-wearnewdata[-n1,3]
-  result630[i]<-sqrt(mean((prelm630-trulm630)^2))
-}
-
-
-
-
-
-#wear 630
-
-
+#Wear 630
 n<-dim(weardata)[1]
 result630<-rep(0,100)
-for (i in 1:100)
+for (i in 1:600)
 {
   
   n1<-base::sample(1:n,size=ceiling(n*0.8))
-  lm630<-lm(log(wear630+2) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
+  lm630<-lm(log(wear630+0.01) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
             data = weardata[n1,])
   lm630 <- stepAIC(lm630, direction="both")
-  prelm630<-exp(predict(lm630,newdata=weardata[-n1,6:12]))-2
+  prelm630<-exp(predict(lm630,newdata=weardata[-n1,6:12]))-0.01
   trulm630<-weardata[-n1,3]
   result630[i]<-sqrt(mean((prelm630-trulm630)^2))
 }
-
-#Calculate the final expression
-lm630<-lm(log(wear630+1) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
-          data = weardata)
-
-lm630 <- stepAIC(lm630, direction="both")
-
-
-
 
 
 #wear 700
@@ -312,20 +237,16 @@ lm630 <- stepAIC(lm630, direction="both")
 
 n<-dim(weardata)[1]
 result700<-rep(0,100)
-for (i in 1:100)
+for (i in 1:600)
 {
   
   n1<-base::sample(1:n,size=ceiling(n*0.8))
-  lm700<-lm(log(wear700+1) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
+  lm700<-lm(log(wear700+0.01) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
             data = weardata[n1,])
   lm700 <- stepAIC(lm700, direction="both")
-  prelm700<-exp(predict(lm700,newdata=weardata[-n1,6:12]))-1
+  prelm700<-exp(predict(lm700,newdata=weardata[-n1,6:12]))-0.01
   trulm700<-weardata[-n1,3]
   result700[i]<-sqrt(mean((prelm700-trulm700)^2))
 }
 
-#Calculate the final expression
-lm700<-lm(log(wear700+1) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
-          data = weardata)
 
-lm700 <- stepAIC(lm700, direction="both")
