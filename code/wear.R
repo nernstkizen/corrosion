@@ -207,8 +207,9 @@ gbm(wear700 ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d5
 
 #Wear 600
 
-
+set.seed(777)
 n<-dim(weardata)[1]
+R2<-rep(0,100)
 result600<-rep(0,100)
 for (i in 1:100)
 {
@@ -217,13 +218,15 @@ n1<-base::sample(1:n,size=ceiling(n*0.8))
 lm600<-lm(log(wear600+1) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
           data = weardata[n1,])
 lm600 <- stepAIC(lm600, direction="both")
+R2[i]<-summary(lm600)$r.squared
 prelm600<-exp(predict(lm600,newdata=weardata[-n1,6:12]))-1
 trulm600<-weardata[-n1,3]
 result600[i]<-sqrt(mean((prelm600-trulm600)^2))
 }
-
-
-
+mean(R2)
+sd(R2)
+mean(result600)
+sd(result600)
 #Calculate the final expression
 lm600<-lm(log(wear600+1) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
           data = weardata)
@@ -254,6 +257,7 @@ for (i in 1:100)
   prelm600<-exp(predict(lm600,newdata=weardata[-n1,6:12]))-1
   trulm600<-weardata[-n1,3]
   result600[i]<-sqrt(mean((prelm600-trulm600)^2))
+  
 }
 
 
@@ -282,9 +286,10 @@ for (i in 1:100)
 
 #wear 630
 
-
+set.seed(777)
 n<-dim(weardata)[1]
 result630<-rep(0,100)
+R2<-rep(0,100)
 for (i in 1:100)
 {
   
@@ -292,10 +297,20 @@ for (i in 1:100)
   lm630<-lm(log(wear630+2) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
             data = weardata[n1,])
   lm630 <- stepAIC(lm630, direction="both")
+  R2[i]<-summary(lm630)$r.squared
   prelm630<-exp(predict(lm630,newdata=weardata[-n1,6:12]))-2
   trulm630<-weardata[-n1,3]
   result630[i]<-sqrt(mean((prelm630-trulm630)^2))
+
 }
+
+mean(R2)
+sd(R2)
+mean(result630)
+sd(result630)
+
+
+
 
 #Calculate the final expression
 lm630<-lm(log(wear630+1) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
@@ -309,9 +324,10 @@ lm630 <- stepAIC(lm630, direction="both")
 
 #wear 700
 
-
+set.seed(777)
 n<-dim(weardata)[1]
 result700<-rep(0,100)
+R2<-rep(0,100)
 for (i in 1:100)
 {
   
@@ -319,11 +335,17 @@ for (i in 1:100)
   lm700<-lm(log(wear700+1) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
             data = weardata[n1,])
   lm700 <- stepAIC(lm700, direction="both")
+  R2[i]<-summary(lm700)$r.squared
   prelm700<-exp(predict(lm700,newdata=weardata[-n1,6:12]))-1
   trulm700<-weardata[-n1,3]
-  
   result700[i]<-sqrt(mean((prelm700-trulm700)^2))
 }
+
+
+mean(R2)
+sd(R2)
+mean(result700)
+sd(result700)
 
 #Calculate the final expression
 lm700<-lm(log(wear700+1) ~ SlurryVelocity+BitumenWtPct+SolidsConcWt+UltraFinesPct+FinesPct+d50+P ,
